@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -10,15 +11,22 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
+    public Text nameText;
     public Text ScoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
     private int m_Points;
+    private int m_HighScore = 0;
     
     private bool m_GameOver = false;
 
-    
+    private void Awake()
+    {
+        LoadScore();
+        nameText.text = $"Highscore: {m_HighScore} Name: {MenuManager.Instance.playerName}";
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -70,7 +78,36 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        SaveScore();
         m_GameOver = true;
         GameOverText.SetActive(true);
+    }
+
+    [System.Serializable]
+    class ScoreSave
+    {
+        public int highScore;
+    }
+
+    private void SaveScore()
+    {
+        if(m_Points > m_HighScore)
+        {
+            ScoreSave score = new ScoreSave();
+            score.highScore = m_Points;
+            string json = JsonUtility.ToJson(score);
+            File.WriteAllText(Application.persistentDataPath + "/savescore.json", json);
+        }
+    }
+
+    private void LoadScore()
+    {
+        string path = Application.persistentDataPath + "/savescore.json";
+        if(File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            ScoreSave score = JsonUtility.FromJson<ScoreSave>(json);
+            m_HighScore = score.highScore;
+        }
     }
 }
